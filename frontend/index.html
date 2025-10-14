@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Database Query Optimization – Demo</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/static/index.css" />
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+	<header class="container header">
+		<div class="brand">
+			<div class="logo">QO</div>
+			<div>
+				<h1>Database Query Optimization</h1>
+				<p class="sub">Indexing, Hashing, and Tree Structures</p>
+			</div>
+		</div>
+		<div class="mode">
+			<label>Mode</label>
+			<select id="modeSelect">
+				<option value="db">DB (MySQL)</option>
+				<option value="memory">In-memory (sample)</option>
+			</select>
+			<button id="applyMode" class="btn">Apply</button>
+		</div>
+	</header>
+
+	<section class="container hero">
+		<div class="hero-text">
+			<h2>Fast, insightful query benchmarking</h2>
+			<p>Run exact, range, and prefix queries. Compare Linear vs Hash vs Binary vs Trie. Generate beautiful reports — instantly.</p>
+			<div class="cta">
+				<button id="runBench" class="btn primary">Run Benchmarks</button>
+				<button id="generatePdf" class="btn">Generate PDF</button>
+				<a id="downloadPdf" class="btn ghost" href="/reports/pdf/download">Download PDF</a>
+			</div>
+		</div>
+		<div class="hero-card">
+			<div class="stat">
+				<div class="stat-title">Reports</div>
+				<div class="stat-value" id="reportStatus">—</div>
+				<div class="stat-sub">PDF, summary.txt, timing chart</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="container grid">
+		<div class="card">
+			<h3>Exact Match (Hash Index)</h3>
+			<div class="row">
+				<input id="exactName" type="text" placeholder="Full name e.g., Amit Sharma" />
+				<button id="exactBtn" class="btn">Search</button>
+			</div>
+			<div class="meta">
+				<span id="exactMeta">—</span>
+			</div>
+			<div class="kpi"><span id="exactCount">—</span></div>
+		</div>
+		<div class="card">
+			<h3>Range Query (Binary Index)</h3>
+			<div class="row">
+				<input id="rangeLo" type="number" placeholder="Age from" />
+				<input id="rangeHi" type="number" placeholder="Age to" />
+				<button id="rangeBtn" class="btn">Search</button>
+			</div>
+			<div class="meta">
+				<span id="rangeMeta">—</span>
+			</div>
+			<div class="kpi"><span id="rangeCount">—</span></div>
+		</div>
+		<div class="card">
+			<h3>Prefix Search (Trie)</h3>
+			<div class="row">
+				<input id="prefixText" type="text" placeholder="Prefix e.g., Amit" />
+				<button id="prefixBtn" class="btn">Search</button>
+			</div>
+			<div class="meta">
+				<span id="prefixMeta">—</span>
+			</div>
+			<div class="kpi"><span id="prefixCount">—</span></div>
+		</div>
+	</section>
+
+	<section class="container card">
+		<h3>Benchmark Results</h3>
+		<canvas id="benchChart" height="120"></canvas>
+		<table class="table" id="benchTable">
+			<thead>
+				<tr>
+					<th>Method</th>
+					<th>Count</th>
+					<th>Time (s)</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</section>
+
+	<section class="container card">
+		<h3>DB Comparison (MySQL vs PostgreSQL vs In‑memory)</h3>
+		<div class="row" style="margin-bottom:12px">
+			<button id="compareBtn" class="btn">Compare DBs</button>
+			<span class="meta">Goal: In‑memory (our indexing) should be faster than MySQL by design (y < x).</span>
+		</div>
+		<canvas id="compareChart" height="120"></canvas>
+		<table class="table" id="compareTable">
+			<thead>
+				<tr>
+					<th>System</th>
+					<th>Exact (s)</th>
+					<th>Range (s)</th>
+					<th>Prefix (s)</th>
+					<th>Total (s)</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</section>
+
+	<footer class="container footer">
+		<div>DAA Project • Query Optimization</div>
+		<div class="links">
+			<a href="/reports/summary.txt" target="_blank">summary.txt</a>
+			<a href="/reports/timings.png" target="_blank">timings.png</a>
+		</div>
+	</footer>
+
+	<script src="/static/app.js"></script>
+</body>
+</html>
+
