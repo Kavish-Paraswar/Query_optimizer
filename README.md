@@ -14,8 +14,8 @@ This project is a Query Optimizer implemented in Python. It includes various mod
 
 1. **Clone the repository:**
    ```powershell
-   git clone <your-repo-url>
-   cd DAA_CP
+   git clone https://github.com/Kavish-Paraswar/query-optimizer.git
+   cd query-optimizer
    ```
 2. **Install dependencies:**
    ```powershell
