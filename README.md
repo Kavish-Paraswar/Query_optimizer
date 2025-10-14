@@ -14,8 +14,8 @@ This project is a Query Optimizer implemented in Python. It includes various mod
 
 1. **Clone the repository:**
    ```powershell
-   git clone https://github.com/Kavish-Paraswar/query-optimizer.git
-   cd query-optimizer
+   git clone https://github.com/Kavish-Paraswar/Query_optimizer.git
+   cd Query_optimizer
    ```
 2. **Install dependencies:**
    ```powershell
