@@ -91,12 +91,65 @@ runBenchBtn.addEventListener('click', async () => {
     const data = await api('/benchmarks/run', { method: 'POST' });
     renderBenchmark(data.benchmarks || []);
     updateReportStatus();
+    fetchAsciiReport(); // <-- ADD THIS
 });
+
+// --- Create a proper container for ASCII report ---
+const reportSection = document.createElement('div');
+reportSection.style.marginTop = '30px';
+reportSection.style.padding = '15px';
+reportSection.style.background = '#0d1117';
+reportSection.style.borderRadius = '10px';
+reportSection.style.border = '1px solid #333';
+reportSection.style.color = '#9cdcfe';
+reportSection.style.fontFamily = 'monospace';
+reportSection.style.whiteSpace = 'pre';
+reportSection.style.overflowX = 'auto';
+reportSection.style.display = 'none'; // hidden initially
+
+const reportHeading = document.createElement('h3');
+reportHeading.textContent = '📊 Benchmark Report (ASCII Summary)';
+reportHeading.style.color = '#ffffff';
+reportHeading.style.marginBottom = '10px';
+reportHeading.style.fontFamily = 'Segoe UI, sans-serif';
+
+const reportBox = document.createElement('pre');
+reportBox.id = 'asciiReport';
+reportBox.style.margin = 0;
+
+reportSection.appendChild(reportHeading);
+reportSection.appendChild(reportBox);
+
+// Append this section below the benchmark chart (where it's visible)
+const chartContainer = document.getElementById('compareChart')?.parentNode || document.body;
+chartContainer.parentNode.insertBefore(reportSection, chartContainer.nextSibling);
+
+document.querySelector('.footer').insertAdjacentElement('beforebegin', reportBox);
+
+async function fetchAsciiReport() {
+    try {
+        const res = await fetch('/reports/summary.txt');
+        const reportSection = document.getElementById('asciiReport').parentNode;
+
+        if (res.ok) {
+            const text = await res.text();
+            document.getElementById('asciiReport').textContent = text;
+            reportSection.style.display = 'block'; // show it
+        } else {
+            document.getElementById('asciiReport').textContent = 'Report not found.';
+            reportSection.style.display = 'block';
+        }
+    } catch {
+        document.getElementById('asciiReport').textContent = 'Error loading report.';
+        document.getElementById('asciiReport').parentNode.style.display = 'block';
+    }
+}
+
+
 compareBtn?.addEventListener('click', async () => {
     const data = await api('/compare/dbs', { method: 'POST' });
     renderCompare(data);
 });
-
 function renderCompare(data){
     // Build times matrix
     const systems = ['mysql','postgres','in_memory'];
@@ -130,15 +183,29 @@ function renderCompare(data){
                 { label: 'Prefix', data: rows.map(r=>r.times[2]), backgroundColor: '#7aa8ff' },
             ]
         },
-        options: { responsive: true, plugins: { }, scales: { x: { stacked: true }, y: { stacked: true } } }
+        options: {
+            responsive: true,
+            plugins: {},
+            scales: { x: { stacked: true }, y: { stacked: true } }
+        }
     });
 }
 
+
 generatePdfBtn.addEventListener('click', async () => {
-    await api('/reports/pdf', { method: 'POST', body: JSON.stringify({}) });
-    updateReportStatus();
-    window.location.href = '/reports/pdf/download';
+    try {
+        const res = await api('/reports/pdf', { method: 'POST', body: JSON.stringify({}) });
+        if (res.ok) {
+            alert('✅ PDF generated successfully! You can download it from the Reports section.');
+        } else {
+            alert('⚠️ Failed to generate PDF.');
+        }
+        updateReportStatus();
+    } catch (err) {
+        alert('❌ Error while generating PDF.');
+    }
 });
+
 
 function renderBenchmark(bench){
     benchTableBody.innerHTML = '';
