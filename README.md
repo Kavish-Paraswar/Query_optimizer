@@ -39,6 +39,7 @@ This project is a Query Optimizer implemented in Python. It includes various mod
 - `main.py` - Main entry point
 - `frontend/` - Frontend files
 - `reports/` - Generated reports
-(.\.venv\Scripts\python -m uvicorn api:create_app --host 127.0.0.1 --port 8000 --reload) for running the Frontend and Backend.)
+
+- (.\.venv\Scripts\python -m uvicorn api:create_app --host 127.0.0.1 --port 8000 --reload) for running the Frontend and Backend.)
 ## License
 MIT
