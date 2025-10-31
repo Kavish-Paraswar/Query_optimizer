@@ -3,8 +3,8 @@ Report for Query Optimization Project
 +-----+---------------+---------------------+-------------+-----------+------------+
 |   # | Query Type    | Method              | Query       |   Results |   Time (s) |
 |-----+---------------+---------------------+-------------+-----------+------------|
-|   0 | Exact Match   | DB Exact            | Abhik Yadav |        11 |   0.163358 |
-|   1 | Range Search  | DB Range            | 22-24       |    140872 |   0.938715 |
-|   2 | Prefix Search | DB Prefix           | aa          |        93 |   0.032791 |
-|   3 | Range Search  | Linear Sample Range | 22-24       |      6885 |   0.001719 |
+|   0 | Exact Match   | DB Exact            | Abhik Yadav |        11 |   0.188697 |
+|   1 | Range Search  | DB Range            | 22-24       |    140872 |   1.12834  |
+|   2 | Prefix Search | DB Prefix           | aa          |        93 |   0.032916 |
+|   3 | Range Search  | Linear Sample Range | 22-24       |      6885 |   0.001431 |
 +-----+---------------+---------------------+-------------+-----------+------------+
