@@ -10,7 +10,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from db_util import create_table_if_not_exists, load_csv_into_db, run_query, check_row_count
 from indexing_algos import LinearSearch, HashIndex, BinaryIndex, build_trie
-
+#  .\.venv\Scripts\Activate.ps1
+# pip install -r requirements.txt
 REPORT_DIR = "reports"
 os.makedirs(REPORT_DIR, exist_ok=True)
 PDF_PATH = os.path.join(REPORT_DIR, "query_benchmark_report.pdf")
@@ -46,36 +47,50 @@ def load_sample_from_db(limit=200000):
     q = f"SELECT * FROM employees LIMIT {limit}"
     return run_query(q, (), fetch=True)
 
-def generate_pdf_report(results, db_name):
+def generate_pdf_report(results, db_name, comparison=None):
     """
-    results: list of tuples (method_label, count, time_seconds)
-    Writes a PDF with a table and a bar chart.
+    results:    list of tuples (method_label, count, time_seconds)
+    comparison: optional object like:
+      {
+        'mysql':    [('Exact', 0, time), ('Range', 0, time), ('Prefix', 0, time)],
+        'postgres': [('Exact', 0, time), ('Range', 0, time), ('Prefix', 0, time)],
+        'in_memory':[('Exact', 0, time), ('Range', 0, time), ('Prefix', 0, time)]
+      }
+      If provided, we add 2 extra pages: comparison table + stacked bar chart.
     """
     if not results:
         print("No results to write to PDF.")
         return
 
-    # build DataFrame
     df = pd.DataFrame(results, columns=["method", "count", "time_s"])
 
-    # Create PDF with two pages: table and chart
     with PdfPages(PDF_PATH) as pdf:
-        # Page 1: title + table
+        # -------- Page 1: title --------
+        fig0, ax0 = plt.subplots(figsize=(11, 8.5))
+        ax0.axis('off')
+        title = (
+            "Query Benchmark Report\n"
+            f"Database: {db_name}\n"
+            f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        ax0.text(0.5, 0.6, title, ha='center', va='center', fontsize=18, weight='bold')
+        pdf.savefig(fig0, bbox_inches='tight')
+        plt.close(fig0)
+
+        # -------- Page 2: benchmark table --------
         fig, ax = plt.subplots(figsize=(11, 8.5))
         ax.axis('off')
-        title = f"Query Benchmark Report\nDatabase: {db_name}\nGenerated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        ax.text(0.5, 0.95, title, ha='center', va='top', fontsize=14, weight='bold')
+        ax.text(0.5, 0.97, "Benchmark Results", ha='center', va='top', fontsize=14, weight='bold')
 
-        # Create a table in the figure
         table_data = [["Method", "Count", "Time (s)"]] + df.values.tolist()
-        table = ax.table(cellText=table_data, colWidths=[0.6, 0.2, 0.2], cellLoc='center', loc='center')
-        table.auto_set_font_size(False)
-        table.set_fontsize(9)
-        table.scale(1, 1.5)
+        tbl = ax.table(cellText=table_data, colWidths=[0.6, 0.2, 0.2], cellLoc='center', loc='center')
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(9)
+        tbl.scale(1, 1.5)
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
 
-        # Page 2: bar chart of times
+        # -------- Page 3: benchmark bar chart --------
         fig2, ax2 = plt.subplots(figsize=(11, 6))
         methods = df["method"].tolist()
         times = df["time_s"].tolist()
@@ -83,17 +98,77 @@ def generate_pdf_report(results, db_name):
         ax2.set_xticks(range(len(methods)))
         ax2.set_xticklabels(methods, rotation=45, ha='right', fontsize=9)
         ax2.set_ylabel("Time (s)")
-        ax2.set_title("Method timings")
-        # annotate bars with time values
+        ax2.set_title("Method timings (lower is better)")
+
         for rect, t in zip(bars, times):
-            height = rect.get_height()
-            ax2.annotate(f"{t:.6f}", xy=(rect.get_x() + rect.get_width() / 2, height),
-                         xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=8)
+            h = rect.get_height()
+            ax2.annotate(f"{t:.6f}", xy=(rect.get_x() + rect.get_width()/2, h),
+                         xytext=(0, 3), textcoords="offset points",
+                         ha='center', va='bottom', fontsize=8)
         plt.tight_layout()
         pdf.savefig(fig2, bbox_inches='tight')
         plt.close(fig2)
 
+        # -------- Pages 4 & 5: DB Comparison (if provided) --------
+        if comparison:
+            def _arr_to_row(sys_name, arr):
+                ex = float(arr[0][2]) if arr and len(arr) > 0 else 0.0
+                rg = float(arr[1][2]) if arr and len(arr) > 1 else 0.0
+                pf = float(arr[2][2]) if arr and len(arr) > 2 else 0.0
+                return {"system": sys_name, "exact": ex, "range": rg, "prefix": pf, "total": ex + rg + pf}
+
+            systems_order = ["mysql", "postgres", "in_memory"]
+            rows = [_arr_to_row(sys, comparison.get(sys, [])) for sys in systems_order]
+            comp_df = pd.DataFrame(rows)
+
+            # -- Page 4: comparison table
+            fig3, ax3 = plt.subplots(figsize=(11, 8.5))
+            ax3.axis('off')
+            ax3.text(0.5, 0.97, "DB Comparison (MySQL vs PostgreSQL vs In-memory)", ha='center',
+                     va='top', fontsize=14, weight='bold')
+            header = ["System", "Exact (s)", "Range (s)", "Prefix (s)", "Total (s)"]
+            table_data = [header] + [[r["system"].upper(),
+                                      f"{r['exact']:.6f}",
+                                      f"{r['range']:.6f}",
+                                      f"{r['prefix']:.6f}",
+                                      f"{r['total']:.6f}"] for _, r in comp_df.iterrows()]
+            tbl2 = ax3.table(cellText=table_data, colLoc='center', cellLoc='center',
+                             colWidths=[0.2,0.2,0.2,0.2,0.2], loc='center')
+            tbl2.auto_set_font_size(False)
+            tbl2.set_fontsize(10)
+            tbl2.scale(1, 1.4)
+            pdf.savefig(fig3, bbox_inches='tight')
+            plt.close(fig3)
+
+            # -- Page 5: comparison stacked bar
+            fig4, ax4 = plt.subplots(figsize=(11, 6))
+            x = list(range(len(comp_df)))
+            exact = comp_df["exact"].tolist()
+            range_ = comp_df["range"].tolist()
+            prefix = comp_df["prefix"].tolist()
+
+            b1 = ax4.bar(x, exact, label="Exact")
+            b2 = ax4.bar(x, range_, bottom=exact, label="Range")
+            bottom_for_prefix = [a + b for a, b in zip(exact, range_)]
+            b3 = ax4.bar(x, prefix, bottom=bottom_for_prefix, label="Prefix")
+
+            ax4.set_xticks(x)
+            ax4.set_xticklabels([s.upper() for s in comp_df["system"]], rotation=0)
+            ax4.set_ylabel("Time (s)")
+            ax4.set_title("DB Comparison (stacked)")
+
+            # Annotate totals above bars
+            for xi, tot in enumerate(comp_df["total"].tolist()):
+                ax4.annotate(f"{tot:.6f}", xy=(xi, tot), xytext=(0, 3),
+                             textcoords="offset points", ha='center', va='bottom', fontsize=8)
+
+            ax4.legend()
+            plt.tight_layout()
+            pdf.savefig(fig4, bbox_inches='tight')
+            plt.close(fig4)
+
     print(f"PDF report generated at: {PDF_PATH}")
+
 def add_postgres_rows_without_label(results_summary, pct=0.02):
     """
     results_summary: list of tuples (method_label, count, time_seconds)
@@ -241,12 +316,12 @@ def cli():
                 results_summary.append(item)
             generate_small_report(bench_list) 
 
-        elif c == "5":        
+        elif c == "5":
             print("Exporting PDF report...")
             db_name = os.environ.get("DB_NAME", "query_optimizatio2")
+            comparison = generate_db_comparison_file(results_summary)
             augmented = add_postgres_rows_without_label(results_summary, pct=0.02)
-            generate_pdf_report(augmented, db_name) 
-
+            generate_pdf_report(augmented, db_name, comparison=comparison)
         elif c == "6":
             print("Bye")
             break
@@ -416,7 +491,7 @@ def generate_db_comparison_file(results_summary):
     comparison_data = {
         'mysql': mysql_agg,
         'postgres': postgres_agg,
-        'in_memory': inmemory_agg
+        'in_memory': inmemory_agg,
     }
     
     # Also create CSV/JSON format

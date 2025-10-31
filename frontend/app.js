@@ -136,7 +136,7 @@ async function fetchAsciiReport() {
             document.getElementById('asciiReport').textContent = text;
             reportSection.style.display = 'block'; // show it
         } else {
-            document.getElementById('asciiReport').textContent = 'Report not found.';
+            // document.getElementById('asciiReport').textContent = 'Report not found.';
             reportSection.style.display = 'block';
         }
     } catch {
